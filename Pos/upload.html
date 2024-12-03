@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="sk">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPOGNETKY</title>
+    <link rel="stylesheet" href="upload.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Horný bar -->
+    <div class="horny-bar">
+        <div class="logo-text">
+            <img src="img/logo.png" alt="Logo" class="logo">
+            <h1>SPOGNETKY</h1>
+        </div>
+    </div>
+
+    <!-- Stredná časť -->
+    <div class="stred" id="stred">
+        <!-- Obrázky sa zobrazia tu -->
+    </div>
+
+    <!-- Tlačidlo pre otvorenie košíka -->
+    <button id="cart-toggle" class="cart-toggle">
+        <span class="material-icons">shopping_cart</span> Košík
+    </button>
+
+    <!-- Off-Canvas košík -->
+    <div id="off-canvas-cart" class="off-canvas-cart">
+        <div class="off-canvas-content">
+            <h2>Košík</h2>
+            <div id="cart-items"></div>
+            <div class="cart-footer">
+                <span id="total-price">Cena: 0 €</span>
+                <button id="checkout-button" class="checkout-button">Platba</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Input na nahrávanie súborov -->
+    <input type="file" id="file-input" accept="image/png, image/jpg, image/jpeg" hidden>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <button id="upload-button">Nahrať svoju SPOGNETKU</button>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="upload.js"></script>
+</body>
+
+</html>
