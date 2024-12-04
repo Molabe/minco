@@ -97,7 +97,11 @@ document.getElementById("file-input").addEventListener("change", function (event
                 `;
                 editButton.onclick = function () {
                     openEditor(previewImg, function (updatedSrc) {
-                        previewImg.src = updatedSrc; // Aktualizuje náhľad v galérii
+                        // Aktualizuje obrázok v galérii
+                        previewImg.src = updatedSrc;
+
+                        // Aktualizuje obrázok v košíku, ak existuje
+                        updateImageInCart(previewImg.src, updatedSrc);
                     });
                 };
 
@@ -119,7 +123,17 @@ document.getElementById("file-input").addEventListener("change", function (event
     }
 });
 
-function openEditor(image, callback) {
+function updateImageInCart(originalSrc, updatedSrc) {
+    const cartImages = document.querySelectorAll(".cart-item-img");
+    cartImages.forEach((img) => {
+        if (img.src === originalSrc) {
+            img.src = updatedSrc;
+        }
+    });
+}
+
+
+function openEditor(imageElement, callback) {
     // Vytvorenie modálneho okna pre editor
     const editorModal = document.createElement("div");
     editorModal.className = "editor-modal";
@@ -138,7 +152,7 @@ function openEditor(image, callback) {
 
     // Vytvorenie obrázka v editore
     const editorImage = new Image();
-    editorImage.src = image.src;
+    editorImage.src = imageElement.src; // Použijeme aktuálny zdroj obrázka
     editorImage.style.position = "absolute";
     editorImage.style.top = "50%";
     editorImage.style.left = "50%";
@@ -151,25 +165,11 @@ function openEditor(image, callback) {
     imageWrapper.appendChild(editorImage);
 
     // Posuvník pre zoomovanie
-    const cropSliderContainer = document.createElement("div");
-    cropSliderContainer.className = "crop-slider-container";
-
-    const cropMinusButton = document.createElement("button");
-    cropMinusButton.className = "crop-button";
-    cropMinusButton.innerHTML = '<span class="material-icons">remove</span>';
-    cropMinusButton.onclick = function () {
-        if (cropFactor > 1.1) {
-            cropFactor -= 0.1;
-            editorImage.style.transform = `translate(-50%, -50%) scale(${cropFactor})`;
-        }
-    };
-
     const cropSlider = document.createElement("input");
     cropSlider.type = "range";
-    cropSlider.className = "crop-slider";
     cropSlider.min = 1;
     cropSlider.max = 3;
-    cropSlider.step = 0.01;
+    cropSlider.step = 0.1;
     cropSlider.value = 1;
 
     cropSlider.oninput = function () {
@@ -177,19 +177,8 @@ function openEditor(image, callback) {
         editorImage.style.transform = `translate(-50%, -50%) scale(${cropFactor})`;
     };
 
-    const cropPlusButton = document.createElement("button");
-    cropPlusButton.className = "crop-button";
-    cropPlusButton.innerHTML = '<span class="material-icons">add</span>';
-    cropPlusButton.onclick = function () {
-        if (cropFactor < 3) {
-            cropFactor += 0.1;
-            editorImage.style.transform = `translate(-50%, -50%) scale(${cropFactor})`;
-        }
-    };
-
-    cropSliderContainer.appendChild(cropMinusButton);
-    cropSliderContainer.appendChild(cropSlider);
-    cropSliderContainer.appendChild(cropPlusButton);
+    editorModal.appendChild(imageWrapper);
+    editorModal.appendChild(cropSlider);
 
     // Tlačidlá pre otáčanie
     const rotateLeftButton = document.createElement("button");
@@ -208,25 +197,37 @@ function openEditor(image, callback) {
         editorImage.style.transform = `translate(-50%, -50%) rotate(${currentRotation + 90}deg) scale(${cropFactor})`;
     };
 
+    editorModal.appendChild(rotateLeftButton);
+    editorModal.appendChild(rotateRightButton);
+
+
     // Tlačidlo Hotovo
     const doneButton = document.createElement("button");
     doneButton.id = "done-button";
     doneButton.innerText = "Hotovo";
-    doneButton.onclick = function () {
-        callback(editorImage.src); // Aktualizuje náhľad v galérii
-        document.body.removeChild(editorModal); // Odstráni editor
-    };
+    doneButton.addEventListener("click", function () {
+        // Vytvorenie canvasu pre úpravy
+        const canvas = document.createElement("canvas");
+        canvas.width = editorImage.naturalWidth;
+        canvas.height = editorImage.naturalHeight;
+        const ctx = canvas.getContext("2d");
 
-    // Pridanie prvkov do modálneho okna
-    editorModal.appendChild(imageWrapper);
-    editorModal.appendChild(cropSliderContainer);
-    editorModal.appendChild(document.createElement("br"));
-    editorModal.appendChild(rotateLeftButton);
-    editorModal.appendChild(rotateRightButton);
-    editorModal.appendChild(document.createElement("br"));
+        // Nakreslenie upraveného obrázka na canvas
+        const scaleX = canvas.width / editorImage.width;
+        const scaleY = canvas.height / editorImage.height;
+        ctx.scale(scaleX, scaleY);
+        ctx.drawImage(editorImage, 0, 0);
+
+        const updatedSrc = canvas.toDataURL("image/png");
+
+        // Aktualizácia obrázka v galérii a košíku
+        callback(updatedSrc);
+
+        // Odstránenie editoru
+        document.body.removeChild(editorModal);
+    });
+
     editorModal.appendChild(doneButton);
-
-    // Pridanie modálneho okna do tela
     document.body.appendChild(editorModal);
 }
 
@@ -235,6 +236,7 @@ function getRotationDegrees(transform) {
     const match = transform.match(/rotate\((-?\d+)deg\)/);
     return match ? parseInt(match[1], 10) : 0;
 }
+
 
 // Otvorenie a zatvorenie off-canvas košíka
 document.getElementById("cart-toggle").addEventListener("click", function () {
@@ -251,11 +253,11 @@ const prices = {
 // Funkcia na pridanie fotky do košíka
 function addPhotoToCart(photoSrc, photoSize, quantity) {
     const cartItemsContainer = document.getElementById("cart-items");
-    const itemPrice = prices[photoSize]; // Získame cenu podľa veľkosti
+    const itemPrice = prices[photoSize];
 
-    // Vytvorenie položky pre fotku v košíku
     const cartItem = document.createElement("div");
     cartItem.className = "cart-item";
+
     cartItem.innerHTML = `
         <div class="cart-photo">
             <img src="${photoSrc}" alt="Photo" class="cart-item-img">
@@ -275,19 +277,10 @@ function addPhotoToCart(photoSrc, photoSize, quantity) {
             <span class="quantity-text">${quantity}</span>
             <button class="increment">+</button>
         </div>
+        <button class="remove-item">Odstrániť</button>
     `;
-    cartItemsContainer.appendChild(cartItem);
 
-    // Pridáme event listener na zmenu veľkosti
-    const sizeButtons = cartItem.querySelectorAll(".size-btn");
-    sizeButtons.forEach(button => {
-        button.addEventListener("click", function() {
-            const newSize = button.getAttribute("data-size");
-            changeSize(cartItem, newSize);
-        });
-    });
-
-    // Pridanie event listenerov na zmenu počtu kusov
+    // Pridanie event listeneru na zmenu počtu
     cartItem.querySelector(".increment").addEventListener("click", function() {
         changeQuantity(cartItem, 1);
     });
@@ -295,9 +288,51 @@ function addPhotoToCart(photoSrc, photoSize, quantity) {
         changeQuantity(cartItem, -1);
     });
 
-    // Aktualizácia celkovej ceny
-    updateTotalPrice();
+    // Pridanie event listeneru na odstránenie produktu
+    cartItem.querySelector(".remove-item").addEventListener("click", function() {
+        removeItem(cartItem);
+    });
+
+    cartItemsContainer.appendChild(cartItem);
 }
+
+function changeQuantity(cartItem, delta) {
+    const quantityText = cartItem.querySelector(".quantity-text");
+    let quantity = parseInt(quantityText.textContent, 10);
+
+    if (quantity + delta > 0) {
+        quantity += delta;
+        quantityText.textContent = quantity;
+
+        // Aktualizácia ceny podľa počtu kusov
+        const size = cartItem.querySelector(".size-btn.active").getAttribute("data-size");
+        const itemPrice = prices[size];
+        cartItem.querySelector(".total-price").textContent = `${(itemPrice * quantity).toFixed(2)} €`;
+
+        // Aktualizácia ceny za kus
+        cartItem.querySelector(".price-per-unit").textContent = `${itemPrice.toFixed(2)} € za kus`;
+    }
+}
+
+function removeItem(cartItem) {
+    const cartItemsContainer = document.getElementById("cart-items");
+    cartItemsContainer.removeChild(cartItem);
+
+    // Rovnako odstránime aj obrázok z galérie
+    const imageSrc = cartItem.querySelector(".cart-item-img").src;
+    const galleryItems = document.querySelectorAll(".image-container img");
+    galleryItems.forEach(img => {
+        if (img.src === imageSrc) {
+            img.closest(".image-container").remove();
+        }
+    });
+
+    // Ak sa košík vyprázdni, skryjeme jeho zobrazenie
+    if (cartItemsContainer.children.length === 0) {
+        document.getElementById("cart-container").style.display = "none";
+    }
+}
+
 
 // Funkcia na zmenu veľkosti fotky
 function changeSize(cartItem, newSize) {
@@ -326,28 +361,6 @@ function changeSize(cartItem, newSize) {
 
     // Aktualizácia celkovej ceny
     updateTotalPrice();
-}
-
-// Funkcia na zmenu počtu kusov
-function changeQuantity(cartItem, delta) {
-    const quantityText = cartItem.querySelector(".quantity-text");
-    let quantity = parseInt(quantityText.textContent, 10);
-
-    if (quantity + delta > 0) {
-        quantity += delta;
-        quantityText.textContent = quantity;
-
-        // Aktualizácia ceny podľa počtu kusov
-        const size = cartItem.querySelector(".size-btn.active").getAttribute("data-size");
-        const itemPrice = prices[size];
-        cartItem.querySelector(".total-price").textContent = `${(itemPrice * quantity).toFixed(2)} €`;
-
-        // Aktualizácia ceny za kus
-        cartItem.querySelector(".price-per-unit").textContent = `${itemPrice.toFixed(2)} € za kus`;
-
-        // Aktualizácia celkovej ceny
-        updateTotalPrice();
-    }
 }
 
 // Funkcia na výpočet celkovej ceny
