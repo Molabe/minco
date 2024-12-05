@@ -1,5 +1,3 @@
-// imageEditor.js
-
 function zoomIn(imgElement) {
     let scale = parseFloat(imgElement.getAttribute('data-scale')) || 1;
     scale += 0.1;

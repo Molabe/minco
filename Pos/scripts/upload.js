@@ -2,6 +2,10 @@
 
 const uploadInput = document.getElementById('upload-input');
 const imagesContainer = document.getElementById('uploaded-images');
+const cartList = document.getElementById('cart-list');
+const totalPriceElement = document.getElementById('total-price');
+const checkoutButton = document.getElementById('checkout-button');
+let cart = [];
 
 uploadInput.addEventListener('change', function (e) {
     const files = e.target.files;
@@ -12,129 +16,98 @@ uploadInput.addEventListener('change', function (e) {
             const imgElement = document.createElement('img');
             imgElement.src = event.target.result;
             imgElement.classList.add('uploaded-image');
-            imgElement.setAttribute('data-rotation', '0'); // Track rotation (initially 0)
-            imgElement.setAttribute('data-scale', '1'); // Track scale (initially 1)
-            imgElement.setAttribute('data-size', '515x515'); // Default size (515x515mm)
 
             const imageWrapper = document.createElement('div');
             imageWrapper.classList.add('image-wrapper');
+            imageWrapper.innerHTML = `
+                <button class="edit-button">Upraviť</button>
+                <button class="remove-btn">Odstrániť</button>
+                <div class="controls">
+                    <button class="rotate-btn">Otočiť</button>
+                    <button class="zoom-in-btn">Priblížiť</button>
+                    <button class="zoom-out-btn">Oddialiť</button>
+                    <button class="crop-btn">Orezat'</button>
+                </div>
+            `;
 
-            // Add Edit Button
-            const editButton = document.createElement('button');
-            editButton.classList.add('edit-button');
-            editButton.textContent = 'Edit Image';
-            editButton.addEventListener('click', () => toggleControls(imageWrapper));
+            const editButton = imageWrapper.querySelector('.edit-button');
+            const removeButton = imageWrapper.querySelector('.remove-btn');
+            const rotateButton = imageWrapper.querySelector('.rotate-btn');
+            const zoomInButton = imageWrapper.querySelector('.zoom-in-btn');
+            const zoomOutButton = imageWrapper.querySelector('.zoom-out-btn');
+            const cropButton = imageWrapper.querySelector('.crop-btn');
 
-            // Size selection dropdown
-            const sizeSelect = document.createElement('select');
-            sizeSelect.classList.add('size-select');
-            const sizes = [
-                { value: '515x515', text: 'Square 515x515mm - €2.50' },
-                { value: '515x823', text: 'Square 515x823mm - €3.00' }
-            ];
+            let cropper;
 
-            sizes.forEach(size => {
-                const option = document.createElement('option');
-                option.value = size.value;
-                option.textContent = size.text;
-                sizeSelect.appendChild(option);
+            editButton.addEventListener('click', () => {
+                const controls = imageWrapper.querySelector('.controls');
+                controls.style.display = controls.style.display === 'block' ? 'none' : 'block';
+                if (!cropper) {
+                    cropper = new Cropper(imgElement, {
+                        aspectRatio: 1,
+                        viewMode: 2,
+                        autoCropArea: 0.8,
+                    });
+                }
             });
 
-            sizeSelect.addEventListener('change', function () {
-                imgElement.setAttribute('data-size', sizeSelect.value); // Update size
-                updateTransform(imgElement);
+            rotateButton.addEventListener('click', () => {
+                if (cropper) cropper.rotate(90);
             });
 
-            // Create controls div for zooming and rotating (hidden initially)
-            const controls = document.createElement('div');
-            controls.classList.add('controls');
+            zoomInButton.addEventListener('click', () => {
+                if (cropper) cropper.zoom(0.1);
+            });
 
-            const zoomInButton = document.createElement('button');
-            zoomInButton.textContent = 'Zoom In';
-            zoomInButton.classList.add('zoom-in');
-            zoomInButton.addEventListener('click', () => zoomIn(imgElement));
+            zoomOutButton.addEventListener('click', () => {
+                if (cropper) cropper.zoom(-0.1);
+            });
 
-            const zoomOutButton = document.createElement('button');
-            zoomOutButton.textContent = 'Zoom Out';
-            zoomOutButton.classList.add('zoom-out');
-            zoomOutButton.addEventListener('click', () => zoomOut(imgElement));
+            cropButton.addEventListener('click', () => {
+                if (cropper) {
+                    const canvas = cropper.getCroppedCanvas();
+                    imgElement.src = canvas.toDataURL();
+                }
+            });
 
-            const rotateLeftButton = document.createElement('button');
-            rotateLeftButton.textContent = 'Rotate Left';
-            rotateLeftButton.classList.add('rotate-left');
-            rotateLeftButton.addEventListener('click', () => rotateLeft(imgElement));
+            removeButton.addEventListener('click', () => imageWrapper.remove());
 
-            const rotateRightButton = document.createElement('button');
-            rotateRightButton.textContent = 'Rotate Right';
-            rotateRightButton.classList.add('rotate-right');
-            rotateRightButton.addEventListener('click', () => rotateRight(imgElement));
-
-            controls.appendChild(zoomInButton);
-            controls.appendChild(zoomOutButton);
-            controls.appendChild(rotateLeftButton);
-            controls.appendChild(rotateRightButton);
-
-            imageWrapper.appendChild(editButton);
-            imageWrapper.appendChild(sizeSelect); // Append the size selector
             imageWrapper.appendChild(imgElement);
-            imageWrapper.appendChild(controls);
-
             imagesContainer.appendChild(imageWrapper);
         };
         reader.readAsDataURL(file);
     }
 });
 
-function toggleControls(imageWrapper) {
-    const controls = imageWrapper.querySelector('.controls');
-    controls.style.display = controls.style.display === 'block' ? 'none' : 'block';
+function addToCart(imgElement) {
+    const imageSize = imgElement.getAttribute('data-size');
+    const imagePrice = imageSize === '515x515' ? 2.50 : 3.00;
+
+    const cartItem = {
+        image: imgElement.src,
+        size: imageSize,
+        price: imagePrice
+    };
+
+    cart.push(cartItem);
+    updateCart();
 }
 
-// Zoom In
-function zoomIn(imgElement) {
-    let scale = parseFloat(imgElement.getAttribute('data-scale'));
-    scale = Math.min(scale + 0.1, 2); // Limit scale to max of 2
-    imgElement.setAttribute('data-scale', scale);
-    updateTransform(imgElement);
+function updateCart() {
+    cartList.innerHTML = ''; // Clear the current list
+    let totalPrice = 0;
+
+    cart.forEach(item => {
+        const listItem = document.createElement('li');
+        listItem.textContent = `${item.size} - €${item.price.toFixed(2)}`;
+        cartList.appendChild(listItem);
+        totalPrice += item.price;
+    });
+
+    totalPriceElement.textContent = `Celková cena: €${totalPrice.toFixed(2)}`;
 }
 
-// Zoom Out
-function zoomOut(imgElement) {
-    let scale = parseFloat(imgElement.getAttribute('data-scale'));
-    scale = Math.max(scale - 0.1, 0.5); // Limit scale to min of 0.5
-    imgElement.setAttribute('data-scale', scale);
-    updateTransform(imgElement);
-}
-
-// Rotate Left
-function rotateLeft(imgElement) {
-    let rotation = parseInt(imgElement.getAttribute('data-rotation'));
-    rotation -= 90; // Rotate left 90 degrees
-    imgElement.setAttribute('data-rotation', rotation);
-    updateTransform(imgElement);
-}
-
-// Rotate Right
-function rotateRight(imgElement) {
-    let rotation = parseInt(imgElement.getAttribute('data-rotation'));
-    rotation += 90; // Rotate right 90 degrees
-    imgElement.setAttribute('data-rotation', rotation);
-    updateTransform(imgElement);
-}
-
-// Update transform with both rotation and zoom
-function updateTransform(imgElement) {
-    const rotation = imgElement.getAttribute('data-rotation');
-    const scale = imgElement.getAttribute('data-scale');
-    const size = imgElement.getAttribute('data-size'); // Get the selected size
-    imgElement.style.transform = `scale(${scale}) rotate(${rotation}deg)`;
-
-    // Optionally, adjust image size based on selected magnet size
-    if (size === '515x515') {
-        imgElement.style.maxWidth = '515px';
-        imgElement.style.maxHeight = '515px';
-    } else if (size === '515x823') {
-        imgElement.style.maxWidth = '515px';
-        imgElement.style.maxHeight = '823px';
-    }
-}
+// Callback pre pridanie do košíka po úprave
+checkoutButton.addEventListener('click', function () {
+    alert("Pokračujte k platbe.");
+});

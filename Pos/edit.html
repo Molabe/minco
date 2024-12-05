@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Úprava viacerých obrázkov</title>
+    <link rel="stylesheet" href="upload.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
+</head>
+<body>
+<div class="container">
+    <h1>Úprava obrázkov</h1>
+    <input type="file" id="upload-input" multiple />
+    <div id="image-gallery" class="image-gallery"></div>
+
+    <div id="editor" style="display:none;">
+        <h2>Editor obrázka</h2>
+        <div id="editor-image-container"></div>
+        <div id="controls">
+            <button id="rotate-btn">Otočiť</button>
+            <button id="zoom-in-btn">Priblížiť</button>
+            <button id="zoom-out-btn">Oddialiť</button>
+            <button id="crop-btn">Orezať</button>
+            <button id="save-btn">Uložiť</button>
+            <button id="close-editor-btn">Zatvoriť editor</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+<script src="edit.js"></script>
+</body>
+</html>
