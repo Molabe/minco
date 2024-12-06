@@ -3,32 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zobrazenie obrázka</title>
+    <title>Nahranie obrázka</title>
     <link rel="stylesheet" href="upload.css">
 </head>
 <body>
 <div class="container">
-    <h1>Upravený obrázok</h1>
-    <div id="uploaded-image-container"></div>
-    <button onclick="goBack()">Späť na úpravy</button>
+    <h1>Vyberte obrázok na úpravu</h1>
+    <input type="file" id="upload-input" />
 </div>
 
 <script>
-    const imageContainer = document.getElementById('uploaded-image-container');
-    const urlParams = new URLSearchParams(window.location.search);
-    const imageData = urlParams.get('image');
+    const uploadInput = document.getElementById('upload-input');
 
-    if (imageData) {
-        const imgElement = document.createElement('img');
-        imgElement.src = imageData;
-        imgElement.alt = 'Upravený obrázok';
-        imgElement.style.maxWidth = '100%';
-        imageContainer.appendChild(imgElement);
-    }
+    uploadInput.addEventListener('change', function (e) {
+        const files = e.target.files;
 
-    function goBack() {
-        window.location.href = 'edit.html';
-    }
+        if (files.length > 0) {
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                const imageData = event.target.result;
+                window.location.href = `edit.html?image=${encodeURIComponent(imageData)}`;
+            };
+            reader.readAsDataURL(files[0]);
+        }
+    });
 </script>
 </body>
 </html>

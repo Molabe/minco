@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Objednávka</title>
+    <link rel="stylesheet" href="upload.css">
+</head>
+<body>
+<div class="container">
+    <h1>Potvrdenie objednávky</h1>
+
+    <div id="cart-summary"></div>
+    <p id="total-price">Celková cena: €0.00</p>
+
+    <button id="place-order-btn">Potvrdiť objednávku</button>
+</div>
+
+<script>
+    const cartSummary = document.getElementById('cart-summary');
+    const totalPriceElement = document.getElementById('total-price');
+    const placeOrderButton = document.getElementById('place-order-btn');
+
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+    let totalPrice = 0;
+
+    // Funkcia na odstránenie položky z košíka
+    function removeItem(index) {
+        cart.splice(index, 1);  // Odstránime položku z košíka podľa indexu
+        localStorage.setItem('cart', JSON.stringify(cart));  // Uložíme aktualizovaný košík do localStorage
+        updateCart();  // Aktualizujeme zobrazenie košíka
+    }
+
+    // Funkcia na aktualizovanie zobrazenia košíka
+    function updateCart() {
+        cartSummary.innerHTML = '';
+        totalPrice = 0;  // Resetujeme celkovú cenu
+
+        // Zobrazenie položiek v košíku
+        cart.forEach((item, index) => {
+            const cartItem = document.createElement('div');
+            cartItem.classList.add('cart-item');
+
+            const imgElement = document.createElement('img');
+            imgElement.src = item.imageData;
+            cartItem.appendChild(imgElement);
+
+            const itemDetails = document.createElement('div');
+            itemDetails.classList.add('cart-item-details');
+            itemDetails.innerHTML = `
+                <h3>Magnetka (${item.imageSize})</h3>
+                <p>Veľkosť: ${item.imageSize}</p>
+                <p>Cena: €${item.imagePrice.toFixed(2)}</p>
+            `;
+            cartItem.appendChild(itemDetails);
+
+            const itemPrice = document.createElement('div');
+            itemPrice.classList.add('cart-item-price');
+            itemPrice.textContent = `€${item.imagePrice.toFixed(2)}`;
+            cartItem.appendChild(itemPrice);
+
+            // Tlačidlo na odstránenie položky
+            const removeButton = document.createElement('button');
+            removeButton.textContent = 'Odstrániť';
+            removeButton.classList.add('remove-btn');
+            removeButton.addEventListener('click', function() {
+                removeItem(index);  // Odstránime položku pri kliknutí
+            });
+            cartItem.appendChild(removeButton);
+
+            cartSummary.appendChild(cartItem);
+            totalPrice += item.imagePrice;  // Spočítame celkovú cenu
+        });
+
+        totalPriceElement.textContent = `Celková cena: €${totalPrice.toFixed(2)}`;
+    }
+
+    // Inicializácia košíka
+    updateCart();
+
+    // Potvrdenie objednávky
+    placeOrderButton.addEventListener('click', function () {
+        alert('Objednávka bola potvrdená!');
+        // Tu môžeme pridať logiku pre spracovanie objednávky, ako poslanie emailu alebo do databázy
+    });
+</script>
+</body>
+</html>
