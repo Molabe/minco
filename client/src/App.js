@@ -1,19 +1,15 @@
 import React from "react";
 import Header from "./components/Header";
-import HeroSection from "./components/HeroSection";
-import FeaturesSection from "./components/FeaturesSection";
+import MainHeader from "./components/MainHeader";
+import Order from "./components/Order";
 import ContactSection from "./components/ContactSection";
+import "./App.css";
 
 const App = () => {
     return (
-        <div
-            style={{
-                background: "linear-gradient(90deg, rgba(1,2,2,1) 0%, rgba(39,89,75,1) 100%)",
-            }}
-        >
+        <div data-bs-spy="scroll" className="app">
             <Header />
-            <HeroSection />
-            <FeaturesSection />
+            <MainHeader />
             <ContactSection />
         </div>
     );
